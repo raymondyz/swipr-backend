@@ -9,7 +9,7 @@ app.get("/", (req, res) => {
   res.json({ message: "API running" });
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -26,7 +26,7 @@ app.post("/login", (req, res) => {
   }
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
   const { name, username, email, password } = req.body;
 
   const user = {
