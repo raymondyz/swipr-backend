@@ -1,4 +1,5 @@
 import express from "express";
+import { login, signup } from "./services/authService";
 
 const app = express();
 
@@ -11,11 +12,43 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  if (email === "test@test.com" && password === "1234") {
-    return res.json({ id: 1, name: "test-user" });
+  try {
+    const user = await login(email, password)
+    return res.json({
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+  }
+  catch (err) {
+    return res.status(401).json({ error: err.message });
+  }
+});
+
+app.post("/signup", (req, res) => {
+  const { name, username, email, password } = req.body;
+
+  const user = {
+    name: name,
+    username: username,
+    email: email,
+    password: password,
+    role: "user",
   }
 
-  return res.status(401).json({ error: "Invalid credentials" });
+  try {
+    const user = await signup(user)
+    return res.json({
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+  }
+  catch (err) {
+    return res.status(401).json({ error: err.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
