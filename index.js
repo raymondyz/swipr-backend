@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { login, signup } from "./services/authService.js";
+import { createAndSendCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
+import { getUserByEmail } from "./db/users.js";
 
 const app = express();
 
@@ -15,17 +16,37 @@ app.get("/", (req, res) => {
   res.json({ message: "API running" });
 });
 
+app.post("/user", async (req, res) => {
+  const { email } = req.body
+
+  try {
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const user = await getUserByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { password_hash, ...safeUser } = user;
+    return res.json(safeUser);
+  }
+  catch (err) {
+    res.status(500).json({
+      error: err.message || "Internal server error",
+    });
+  }
+});
+
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await login(email, password)
-    return res.json({
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    });
+    const { password_hash, ...safeUser } = user;
+    return res.json(safeUser);
   }
   catch (err) {
     return res.status(401).json({ error: err.message });
@@ -37,12 +58,34 @@ app.post("/auth/signup", async (req, res) => {
 
   try {
     const user = await signup({ name, username, email, password })
-    return res.json({
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    });
+    const { password_hash, ...safeUser } = user;
+    return res.json(safeUser);
+  }
+  catch (err) {
+    return res.status(401).json({ error: err.message });
+  }
+});
+
+app.post("/auth/send-code", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    await createAndSendCode(email)
+
+    res.json({ success: true })
+  }
+  catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/auth/verify-code", async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    await verifyCodeAndActivate(email, code)
+
+    res.json({ success: true })
   }
   catch (err) {
     return res.status(401).json({ error: err.message });
