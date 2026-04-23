@@ -1,13 +1,13 @@
-import { supabase } from "./client.js";
+import { supabase } from "./client.js"
 
 export async function createUser(user) {
   const { data, error } = await supabase
     .from("users")
     .insert([user])
-    .select();
+    .select()
 
-  if (error) throw error;
-  return data[0];
+  if (error) throw error
+  return data[0]
 }
 
 export async function getUserByEmail(email) {
@@ -15,8 +15,24 @@ export async function getUserByEmail(email) {
     .from("users")
     .select("*")
     .eq("email", email)
-    .single();
+    .single()
 
-  if (error) throw error;
-  return data;
+  if (error) throw error
+  return data
+}
+
+export async function updateUser(userId, updates) {
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export function activateUser(userId) {
+  return updateUser(userId, { is_verified: true })
 }
