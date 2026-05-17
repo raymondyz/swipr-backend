@@ -54,7 +54,16 @@ export function activateUser(userId) {
 export async function getAllUserProfiles() {
     const {data, error} = await supabase
         .from("user_profiles")
-        .select(`*,users (*)`);
+        .select(`
+        user_id,
+        swipe_availability,
+        notes,
+        location_preferences,
+        users (
+            name,
+            username
+        )
+    `);
 
     if (error) {
         console.error("Error fetching user profiles:", error);
