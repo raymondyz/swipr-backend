@@ -1,5 +1,14 @@
 import { supabase } from "./client.js"
 
+export function standardizeEmail(email) {
+  email = email.trim().toLowerCase()
+  
+  if (email.endsWith("@g.ucla.edu"))
+    return email.replace("@g.ucla.edu", "@ucla.edu")
+
+  return email
+}
+
 export async function createUser(user) {
   const { data, error } = await supabase
     .from("users")
@@ -11,10 +20,11 @@ export async function createUser(user) {
 }
 
 export async function getUserByEmail(email) {
+  const standardEmail = standardizeEmail(email)
   const { data, error } = await supabase
     .from("users")
     .select("*")
-    .eq("email", email)
+    .eq("email", standardEmail)
     .single()
 
   if (error) throw error
