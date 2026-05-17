@@ -4,7 +4,7 @@ import { getAllUserProfiles } from "./db/users.js";
 
 // createAndSendCode("ryz@ucla.edu")
 // verifyCodeAndActivate("ryz@ucla.edu", "390996")
-// console.log(await getAllUserProfiles())
+console.log(JSON.stringify(await getAllUserProfiles()));
 import { standardizeEmail } from "./services/authService.js";
 
 
