@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail } from "./db/users.js";
+import { getUserByEmail, getAllUserProfiles } from "./db/users.js";
 
 const app = express();
 
@@ -39,6 +39,17 @@ app.post("/user", async (req, res) => {
     });
   }
 });
+
+app.post("/user/getAllUserProfiles", async (req, res) => {
+    try {
+        const data = await getAllUserProfiles();
+        return res.json(data);
+    } catch (error) {
+        res.status(500).json({
+            error: err.message || "Internal server error",
+        });
+    }
+})
 
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
