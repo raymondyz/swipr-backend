@@ -17,8 +17,17 @@ export async function signup({ name, username, email, password }) {
       role: "user",
     });
   } catch (err) {
+    console.log(err)
     // Postgres unique constraint error
     if (err.code === "23505") {
+      if (err.message.includes("users_email_key")) {
+        throw new Error("Email already exists");
+      }
+      
+      if (err.message.includes("users_username_key")) {
+        throw new Error ("Username already exists");
+      }
+
       throw new Error("Username or email already exists");
     }
 
