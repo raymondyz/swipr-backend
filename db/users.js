@@ -10,9 +10,13 @@ export function standardizeEmail(email) {
 }
 
 export async function createUser(user) {
+  const standardizedUser = {
+    ...user,
+    email: standardizeEmail(user.email),
+  }
   const { data, error } = await supabase
     .from("users")
-    .insert([user])
+    .insert([standardizedUser])
     .select()
 
   if (error) throw error
