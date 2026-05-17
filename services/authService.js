@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt"
 import { activateUser, createUser, getUserByEmail, updateUser } from "../db/users.js";
 import { setVerificationCode, verifyCode, clearVerificationCode } from "../db/authMetadata.js";
-import { sendVerificationEmail } from "./emailService.js";
+import { sendResetEmail, sendVerificationEmail } from "./emailService.js";
 
 export async function signup({ name, username, email, password }) {
   const passwordHash = await bcrypt.hash(password, 10);
@@ -73,6 +73,17 @@ export async function createAndSendCode(email) {
 
   await setVerificationCode(user.id, code, 10 * 60 * 1000)
   await sendVerificationEmail(standardEmail, code)
+}
+
+export async function createAndSendResetCode(email) {
+  const code = generateCode()
+  const user = await getUserByEmail(email)
+  if (!user) {
+    throw new Error("User not found")
+  }
+
+  await setVerificationCode(user.id, code, 10 * 60 * 1000)
+  await sendResetEmail(email, code)
 }
 
 export async function verifyCodeAndActivate(email, code) {
