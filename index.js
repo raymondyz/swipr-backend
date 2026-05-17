@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { createAndSendCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail } from "./db/users.js";
+import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
+import { getUserByEmail, getAllUserProfiles } from "./db/users.js";
 
 const app = express();
 
@@ -39,6 +39,17 @@ app.post("/user", async (req, res) => {
     });
   }
 });
+
+app.post("/user/getAllUserProfiles", async (req, res) => {
+    try {
+        const data = await getAllUserProfiles();
+        return res.json(data);
+    } catch (error) {
+        res.status(500).json({
+            error: err.message || "Internal server error",
+        });
+    }
+})
 
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
@@ -91,6 +102,24 @@ app.post("/auth/verify-code", async (req, res) => {
     return res.status(401).json({ error: err.message });
   }
 });
+
+app.post("/auth/send-reset-code", async (req, res) => {
+    const {email} = res.body;
+
+    const user = await getUserByEmail(email)
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    try {
+        await createAndSendResetCode(email)
+
+        res.json({ success: true })
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 
 const PORT = process.env.PORT || 3000;
 
