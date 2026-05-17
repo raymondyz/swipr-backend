@@ -124,8 +124,6 @@ app.post("/profile/get", async (req, res) => {
   }
 });
 
-import { getProfile, updateProfile } from "./db/profiles.js";
-
 app.post("/profile/get", async (req, res) => {
   const { userId } = req.body;
 
