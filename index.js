@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { createAndSendCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
+import { getProfile, updateProfile } from "./db/user_profiles.js";
 import { getUserByEmail } from "./db/users.js";
 
 const app = express();
@@ -91,6 +92,92 @@ app.post("/auth/verify-code", async (req, res) => {
     return res.status(401).json({ error: err.message });
   }
 });
+
+app.post("/profile/get", async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    const profile = await getProfile(userId);
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    return res.json(profile);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+import { getProfile, updateProfile } from "./db/profiles.js";
+
+app.post("/profile/get", async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    const profile = await getProfile(userId);
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    return res.json(profile);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/profile/update", async (req, res) => {
+  const { userId, updates } = req.body;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    if (!updates || typeof updates !== "object") {
+      return res.status(400).json({ error: "updates object is required" });
+    }
+
+    const allowedFields = ["swipe_availability", "notes", "location_preferences"];
+    const safeUpdates = {};
+
+    for (const field of allowedFields) {
+      if (field in updates) {
+        safeUpdates[field] = updates[field];
+      }
+    }
+
+    // Validation
+    const VALID_SWIPE = ["offer_swipes", "self_swipes", "need_swipes"];
+    if (safeUpdates.swipe_availability && !VALID_SWIPE.includes(safeUpdates.swipe_availability)) {
+      return res.status(400).json({ error: "Invalid swipe_availability" });
+    }
+    if (safeUpdates.location_preferences && !Array.isArray(safeUpdates.location_preferences)) {
+      return res.status(400).json({ error: "location_preferences must be an array" });
+    }
+    if (safeUpdates.notes !== undefined && (typeof safeUpdates.notes !== "string" || safeUpdates.notes.length > 1000)) {
+      return res.status(400).json({ error: "Invalid notes" });
+    }
+
+    safeUpdates.updated_at = new Date();
+
+    const profile = await updateProfile(userId, safeUpdates);
+    return res.json(profile);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 const PORT = process.env.PORT || 3000;
 
