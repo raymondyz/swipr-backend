@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
-import { getProfile, updateProfile } from "./db/user_profiles.js";
+import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail, getAllUserProfiles } from "./db/users.js";
+import { getUserByEmail } from "./db/users.js";
 
 const app = express();
 
@@ -40,17 +40,6 @@ app.post("/user", async (req, res) => {
     });
   }
 });
-
-app.post("/user/getAllUserProfiles", async (req, res) => {
-    try {
-        const data = await getAllUserProfiles();
-        return res.json(data);
-    } catch (error) {
-        res.status(500).json({
-            error: err.message || "Internal server error",
-        });
-    }
-})
 
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
@@ -104,25 +93,16 @@ app.post("/auth/verify-code", async (req, res) => {
   }
 });
 
-app.post("/profile/get", async (req, res) => {
-  const { userId } = req.body;
-
-  try {
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
+app.post("/user/getAllUserProfiles", async (req, res) => {
+    try {
+        const data = await getAllUserProfiles();
+        return res.json(data);
+    } catch (error) {
+        res.status(500).json({
+            error: err.message || "Internal server error",
+        });
     }
-
-    const profile = await getProfile(userId);
-
-    if (!profile) {
-      return res.status(404).json({ error: "Profile not found" });
-    }
-
-    return res.json(profile);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
+})
 
 app.post("/profile/get", async (req, res) => {
   const { userId } = req.body;
