@@ -1,23 +1,23 @@
 import { supabase } from "./client.js"
 
-export async function getMessages(userA, userB) {
+export async function getMessages(userFrom, userTo) {
     const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq."${userA}",receiver_id.eq."${userB}"),and(sender_id.eq."${userB}",receiver_id.eq."${userA}")`)
+        .or(`and(sender_id.eq."${userFrom}",receiver_id.eq."${userTo}"),and(sender_id.eq."${userTo}",receiver_id.eq."${userFrom}")`)
         .order("created_at", { ascending: true })
 
     if (error) throw error
     return data
 }
 
-export async function sendMessage(senderId, recieverId, content) {
+export async function sendMessage(senderId, receiverId, content) {
     const { data, error } = await supabase
         .from("messages")
         .insert([
             {
                 sender_id: senderId,
-                receiver_id: recieverId,
+                receiver_id: receiverId,
                 content,
             },
         ])
