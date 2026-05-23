@@ -203,6 +203,51 @@ app.post("/auth/send-reset-code", async (req, res) => {
     }
 });
 
+app.post("/messages/get", async (req, res) => {
+  const { userFrom, userTo } = req.body;
+
+  try {
+    if (!userFrom) {
+      return res.status(400).json({error: "userFrom is required",});
+    }
+
+    if (!userTo) {
+      return res.status(400).json({error: "userTo is required",});
+    }
+
+    const messages = await getMessages(userFrom, userTo);
+
+    return res.json(messages);
+
+  } catch (err) {
+      return res.status(500).json({error: err.message,});
+  }
+});
+
+app.post("/messages/send", async (req, res) => {
+  const { senderId, receiverId, content } = req.body;
+
+  try {
+    if (!senderId) {
+      return res.status(400).json({error: "senderId is required",});
+    }
+
+    if (!receiverId) {
+      return res.status(400).json({error: "receiverId is required",});
+    }
+
+    if (!content) {
+      return res.status(400).json({error: "content is required",});
+    }
+
+    const message = await sendMessage(senderId, receiverId, content);
+
+    return res.json(message);
+
+  } catch (err) {
+      return res.status(500).json({error: err.message,});
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
