@@ -136,7 +136,7 @@ app.post("/profile/update", async (req, res) => {
       return res.status(400).json({ error: "updates object is required" });
     }
 
-    const allowedFields = ["swipe_availability", "notes", "location_preferences"];
+    const allowedFields = ["swipe_availability", "notes", "location_preferences", "availability"];
     const safeUpdates = {};
 
     for (const field of allowedFields) {
@@ -150,11 +150,21 @@ app.post("/profile/update", async (req, res) => {
     if (safeUpdates.swipe_availability && !VALID_SWIPE.includes(safeUpdates.swipe_availability)) {
       return res.status(400).json({ error: "Invalid swipe_availability" });
     }
-    if (safeUpdates.location_preferences && !Array.isArray(safeUpdates.location_preferences)) {
-      return res.status(400).json({ error: "location_preferences must be an array" });
-    }
     if (safeUpdates.notes !== undefined && (typeof safeUpdates.notes !== "string" || safeUpdates.notes.length > 1000)) {
       return res.status(400).json({ error: "Invalid notes" });
+    }
+    if (safeUpdates.location_preferences !== undefined) {
+      const lp = safeUpdates.location_preferences;
+      const valid =
+        lp !== null &&
+        typeof lp === "object" &&
+        !Array.isArray(lp) &&
+        Object.values(lp).every(
+          (rating) => typeof rating === "number" && rating >= 0 && rating <= 5
+        );
+      if (!valid) {
+        return res.status(400).json({ error: "location_preferences must be an object of location: rating (0-5)" });
+      }
     }
 
     safeUpdates.updated_at = new Date();
