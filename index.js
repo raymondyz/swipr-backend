@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import { requireAuth } from "./middleware/requireAuth.js";
+import { signToken } from "./middleware/tokenService.js";
+
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
 import { getUserByEmail } from "./db/users.js";
@@ -17,7 +20,7 @@ app.get("/", (req, res) => {
   res.json({ message: "API running" });
 });
 
-app.post("/user", async (req, res) => {
+app.post("/user", requireAuth, async (req, res) => {
   const { email } = req.body
 
   try {
@@ -47,14 +50,15 @@ app.post("/auth/login", async (req, res) => {
   try {
     const user = await login(email, password)
     const { password_hash, ...safeUser } = user;
-    return res.json(safeUser);
+    const token = signToken(user.id)
+    return res.json({ user: safeUser, token});
   }
   catch (err) {
     return res.status(401).json({ error: err.message });
   }
 });
 
-app.post("/auth/signup", async (req, res) => {
+app.post("/auth/signup", requireAuth, async (req, res) => {
   const { name, username, email, password } = req.body;
 
   try {
@@ -67,7 +71,7 @@ app.post("/auth/signup", async (req, res) => {
   }
 });
 
-app.post("/auth/send-code", async (req, res) => {
+app.post("/auth/send-code", requireAuth, async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -84,16 +88,17 @@ app.post("/auth/verify-code", async (req, res) => {
   const { email, code } = req.body;
 
   try {
-    await verifyCodeAndActivate(email, code)
+    const user = await verifyCodeAndActivate(email, code)
+    const token = signToken(user.id)
 
-    res.json({ success: true })
+    res.json({ success: true, token })
   }
   catch (err) {
     return res.status(401).json({ error: err.message });
   }
 });
 
-app.post("/user/getAllUserProfiles", async (req, res) => {
+app.post("/user/getAllUserProfiles", requireAuth, async (req, res) => {
     try {
         const data = await getAllUserProfiles();
         return res.json(data);
@@ -104,8 +109,8 @@ app.post("/user/getAllUserProfiles", async (req, res) => {
     }
 })
 
-app.post("/profile/get", async (req, res) => {
-  const { userId } = req.body;
+app.post("/profile/get", requireAuth, async (req, res) => {
+  const userId = req.userId;
 
   try {
     if (!userId) {
@@ -124,8 +129,9 @@ app.post("/profile/get", async (req, res) => {
   }
 });
 
-app.post("/profile/update", async (req, res) => {
-  const { userId, updates } = req.body;
+app.post("/profile/update", requireAuth, async (req, res) => {
+  const updates = req.body.updates;
+  const userId = req.userId;
 
   try {
     if (!userId) {
@@ -193,7 +199,7 @@ app.post("/auth/send-reset-code", async (req, res) => {
     }
 });
 
-app.post("/messages/get", async (req, res) => {
+app.post("/messages/get", requireAuth, async (req, res) => {
   const { userFrom, userTo } = req.body;
 
   try {
@@ -214,7 +220,7 @@ app.post("/messages/get", async (req, res) => {
   }
 });
 
-app.post("/messages/send", async (req, res) => {
+app.post("/messages/send", requireAuth, async (req, res) => {
   const { senderId, receiverId, content } = req.body;
 
   try {
