@@ -8,6 +8,7 @@ export async function getAllUserProfiles() {
         swipe_availability,
         notes,
         location_preferences,
+        availability,
         users (
             name,
             username
