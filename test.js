@@ -1,14 +1,11 @@
 import { sendVerificationEmail } from "./services/emailService.js";
 import { createAndSendCode, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getAllUserProfiles } from "./db/users.js";
-
-// createAndSendCode("ryz@ucla.edu")
-// verifyCodeAndActivate("ryz@ucla.edu", "390996")
-console.log(JSON.stringify(await getAllUserProfiles()));
-import { standardizeEmail } from "./services/authService.js";
+import { getProfile } from "./db/user_profiles.js";
+import { getUserByEmail } from "./db/users.js";
 
 
-// createAndSendCode("ryz@ucla.edu")
-console.log(standardizeEmail("RYz@g.ucla.edu"));
+
+// console.log(await getUserByEmail("ryz@g.ucla.edu"))
+// console.log(await getProfile("1cfca496-8341-4d18-833b-807f3d66ba1c"))
 
 // signup({ name: "raymond", username: "ryz", email: "ryz@ucla.edu", password: "raymond123"})
