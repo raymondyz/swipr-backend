@@ -35,6 +35,17 @@ export async function getUserByEmail(email) {
   return data
 }
 
+export async function getUserById(userId) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 export async function updateUser(userId, updates) {
   const { data, error } = await supabase
     .from("users")

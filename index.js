@@ -5,7 +5,7 @@ import { signToken } from "./middleware/tokenService.js";
 
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail } from "./db/users.js";
+import { getUserByEmail, getUserById } from "./db/users.js";
 
 const app = express();
 
@@ -68,6 +68,19 @@ app.post("/auth/signup", requireAuth, async (req, res) => {
   }
   catch (err) {
     return res.status(401).json({ error: err.message });
+  }
+});
+
+app.post("/auth/me", requireAuth, async (req, res) => {
+  try {
+    const user = await getUserById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const { password_hash, ...safeUser } = user;
+    return res.json(safeUser);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
