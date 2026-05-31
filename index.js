@@ -6,6 +6,7 @@ import { signToken } from "./middleware/tokenService.js";
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
 import { getUserByEmail, getUserById } from "./db/users.js";
+import { sendMessage, getMessages } from "./db/messages.js";
 
 const app = express();
 
@@ -212,19 +213,20 @@ app.post("/auth/send-reset-code", async (req, res) => {
     }
 });
 
-app.post("/messages/get", requireAuth, async (req, res) => {
-  const { userFrom, userTo } = req.body;
+app.post("/message/get", requireAuth, async (req, res) => {
+  const { otherId } = req.body;
+  const userId = req.userId;
 
   try {
-    if (!userFrom) {
-      return res.status(400).json({error: "userFrom is required",});
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
     }
 
-    if (!userTo) {
-      return res.status(400).json({error: "userTo is required",});
+    if (!otherId) {
+      return res.status(400).json({error: "otherId is required",});
     }
 
-    const messages = await getMessages(userFrom, userTo);
+    const messages = await getMessages(userId, otherId);
 
     return res.json(messages);
 
@@ -233,23 +235,24 @@ app.post("/messages/get", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/messages/send", requireAuth, async (req, res) => {
-  const { senderId, receiverId, content } = req.body;
+app.post("/message/send", requireAuth, async (req, res) => {
+  const { otherId, content } = req.body;
+  const userId = req.userId;
 
   try {
-    if (!senderId) {
-      return res.status(400).json({error: "senderId is required",});
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
     }
 
-    if (!receiverId) {
-      return res.status(400).json({error: "receiverId is required",});
+    if (!otherId) {
+      return res.status(400).json({error: "otherId is required",});
     }
 
     if (!content) {
       return res.status(400).json({error: "content is required",});
     }
 
-    const message = await sendMessage(senderId, receiverId, content);
+    const message = await sendMessage(userId, otherId, content);
 
     return res.json(message);
 
