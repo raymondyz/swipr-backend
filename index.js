@@ -59,7 +59,7 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.post("/auth/signup", requireAuth, async (req, res) => {
+app.post("/auth/signup", async (req, res) => {
   const { name, username, email, password } = req.body;
 
   try {
@@ -85,7 +85,7 @@ app.post("/auth/me", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/auth/send-code", requireAuth, async (req, res) => {
+app.post("/auth/send-code", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -102,8 +102,11 @@ app.post("/auth/verify-code", async (req, res) => {
   const { email, code } = req.body;
 
   try {
+    console.log("A")
     const user = await verifyCodeAndActivate(email, code)
+    console.log(user)
     const token = signToken(user.id)
+    console.log("Z")
 
     res.json({ success: true, token })
   }
