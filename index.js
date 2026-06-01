@@ -6,7 +6,7 @@ import { signToken } from "./middleware/tokenService.js";
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
 import { getUserByEmail, getUserById } from "./db/users.js";
-import { sendMessage, getMessages } from "./db/messages.js";
+import { sendMessage, getMessages, getAllChatUsers } from "./db/messages.js";
 
 const app = express();
 
@@ -231,9 +231,27 @@ app.post("/message/get", requireAuth, async (req, res) => {
     return res.json(messages);
 
   } catch (err) {
-      return res.status(500).json({error: err.message,});
+      return res.status(500).json({error: err.message});
   }
 });
+
+app.post("/message/get-all-chats", requireAuth, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+
+    const messages = await getAllChatUsers(userId);
+
+    return res.json(messages);
+
+  } catch (err) {
+      return res.status(500).json({error: err.message});
+  }
+});
+
 
 app.post("/message/send", requireAuth, async (req, res) => {
   const { otherId, content } = req.body;
@@ -257,7 +275,7 @@ app.post("/message/send", requireAuth, async (req, res) => {
     return res.json(message);
 
   } catch (err) {
-      return res.status(500).json({error: err.message,});
+      return res.status(500).json({error: err.message});
   }
 });
 
