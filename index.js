@@ -168,6 +168,10 @@ app.post("/profile/update", requireAuth, async (req, res) => {
       }
     }
 
+    if (!safeUpdates.notes) {
+      safeUpdates.notes = ""
+    }
+
     // Validation
     const VALID_SWIPE = ["offer_swipes", "self_swipes", "need_swipes"];
     if (safeUpdates.swipe_availability && !VALID_SWIPE.includes(safeUpdates.swipe_availability)) {
