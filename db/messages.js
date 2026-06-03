@@ -5,7 +5,7 @@ export async function getMessages(userFrom, userTo) {
         .from("messages")
         .select("*")
         .or(`and(sender_id.eq."${userFrom}",receiver_id.eq."${userTo}"),and(sender_id.eq."${userTo}",receiver_id.eq."${userFrom}")`)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
 
     if (error) throw error
     return data
