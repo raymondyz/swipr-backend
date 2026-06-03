@@ -127,7 +127,7 @@ app.post("/user/getAllUserProfiles", requireAuth, async (req, res) => {
 })
 
 app.post("/profile/get", requireAuth, async (req, res) => {
-  const userId = req.userId;
+  const userId = req.body.userId;
 
   try {
     if (!userId) {
