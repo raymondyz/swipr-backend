@@ -286,8 +286,9 @@ app.post("/message/send", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/user/update-name-or-username", async (req, res) => {
-  const { userId, name, username } = req.body;
+app.post("/user/update-user-info", async (req, res) => {
+  const { name, username } = req.body;
+  const userId = req.userId
 
   try {
     if (!userId) {
@@ -309,11 +310,27 @@ app.post("/user/update-name-or-username", async (req, res) => {
 });
 
 app.post("/user/update-password", async (req, res) => {
-  const { userId, newPassword } = req.body;
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.userId
 
   try {
     if (!userId) {
       return res.status(400).json({error: "userId is required",});
+    }
+    if (!oldPassword) {
+      return res.status(400).json({error: "oldPassword is required",});
+    }
+
+    const user = await getUserById(userId);
+  
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    
+    const valid = await bcrypt.compare(oldPassword, user.password_hash);
+    
+    if (!valid) {
+      throw new Error("Invalid credentials");
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -323,7 +340,7 @@ app.post("/user/update-password", async (req, res) => {
     res.json({success: true});
 
   } catch (err) {
-      return res.status(500).json({error: err.message});
+    return res.status(500).json({error: err.message});
   }
 });
 
