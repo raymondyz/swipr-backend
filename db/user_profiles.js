@@ -26,7 +26,17 @@ export async function getAllUserProfiles() {
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from("user_profiles")
-    .select("*")
+    .select(`
+    user_id,
+    swipe_availability,
+    notes,
+    location_preferences,
+    availability,
+    users (
+      name,
+      username
+    )
+    `)
     .eq("user_id", userId)
     .single()
 

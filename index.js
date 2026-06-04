@@ -5,7 +5,8 @@ import { signToken } from "./middleware/tokenService.js";
 
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail } from "./db/users.js";
+import { getUserByEmail, getUserById, updateUser } from "./db/users.js";
+import { sendMessage, getMessages, getAllChatUsers } from "./db/messages.js";
 
 const app = express();
 
@@ -58,7 +59,7 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.post("/auth/signup", requireAuth, async (req, res) => {
+app.post("/auth/signup", async (req, res) => {
   const { name, username, email, password } = req.body;
 
   try {
@@ -71,7 +72,20 @@ app.post("/auth/signup", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/auth/send-code", requireAuth, async (req, res) => {
+app.post("/auth/me", requireAuth, async (req, res) => {
+  try {
+    const user = await getUserById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const { password_hash, ...safeUser } = user;
+    return res.json(safeUser);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/auth/send-code", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -88,8 +102,11 @@ app.post("/auth/verify-code", async (req, res) => {
   const { email, code } = req.body;
 
   try {
+    console.log("A")
     const user = await verifyCodeAndActivate(email, code)
+    console.log(user)
     const token = signToken(user.id)
+    console.log("Z")
 
     res.json({ success: true, token })
   }
@@ -110,7 +127,7 @@ app.post("/user/getAllUserProfiles", requireAuth, async (req, res) => {
 })
 
 app.post("/profile/get", requireAuth, async (req, res) => {
-  const userId = req.userId;
+  const userId = req.body.userId;
 
   try {
     if (!userId) {
@@ -149,6 +166,10 @@ app.post("/profile/update", requireAuth, async (req, res) => {
       if (field in updates) {
         safeUpdates[field] = updates[field];
       }
+    }
+
+    if (!safeUpdates.notes) {
+      safeUpdates.notes = ""
     }
 
     // Validation
@@ -199,49 +220,127 @@ app.post("/auth/send-reset-code", async (req, res) => {
     }
 });
 
-app.post("/messages/get", requireAuth, async (req, res) => {
-  const { userFrom, userTo } = req.body;
+app.post("/message/get", requireAuth, async (req, res) => {
+  const { otherId } = req.body;
+  const userId = req.userId;
 
   try {
-    if (!userFrom) {
-      return res.status(400).json({error: "userFrom is required",});
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
     }
 
-    if (!userTo) {
-      return res.status(400).json({error: "userTo is required",});
+    if (!otherId) {
+      return res.status(400).json({error: "otherId is required",});
     }
 
-    const messages = await getMessages(userFrom, userTo);
+    const messages = await getMessages(userId, otherId);
 
     return res.json(messages);
 
   } catch (err) {
-      return res.status(500).json({error: err.message,});
+      return res.status(500).json({error: err.message});
   }
 });
 
-app.post("/messages/send", requireAuth, async (req, res) => {
-  const { senderId, receiverId, content } = req.body;
+app.post("/message/get-all-chats", requireAuth, async (req, res) => {
+  const userId = req.userId;
 
   try {
-    if (!senderId) {
-      return res.status(400).json({error: "senderId is required",});
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
     }
 
-    if (!receiverId) {
-      return res.status(400).json({error: "receiverId is required",});
+    const messages = await getAllChatUsers(userId);
+
+    return res.json(messages);
+
+  } catch (err) {
+      return res.status(500).json({error: err.message});
+  }
+});
+
+
+app.post("/message/send", requireAuth, async (req, res) => {
+  const { otherId, content } = req.body;
+  const userId = req.userId;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+
+    if (!otherId) {
+      return res.status(400).json({error: "otherId is required",});
     }
 
     if (!content) {
       return res.status(400).json({error: "content is required",});
     }
 
-    const message = await sendMessage(senderId, receiverId, content);
+    const message = await sendMessage(userId, otherId, content);
 
     return res.json(message);
 
   } catch (err) {
-      return res.status(500).json({error: err.message,});
+      return res.status(500).json({error: err.message});
+  }
+});
+
+app.post("/user/update-user-info", async (req, res) => {
+  const { name, username } = req.body;
+  const userId = req.userId
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+
+    const updatedUser = await updateUser(userId, { name, username });
+
+    return res.json(updatedUser);
+
+  } catch (err) {
+
+      if (err.code === "23505") {
+        return res.status(409).json({error: "username already exists",});
+      }
+
+      return res.status(500).json({error: err.message});
+  }
+});
+
+app.post("/user/update-password", async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.userId
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+    if (!oldPassword) {
+      return res.status(400).json({error: "oldPassword is required",});
+    }
+
+    const user = await getUserById(userId);
+  
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    
+    const valid = await bcrypt.compare(oldPassword, user.password_hash);
+    
+    if (!valid) {
+      throw new Error("Invalid credentials");
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await updateUser(userId, { password_hash: passwordHash });
+
+    res.json({success: true});
+
+  } catch (err) {
+    return res.status(500).json({error: err.message});
   }
 });
 

@@ -103,4 +103,6 @@ export async function verifyCodeAndActivate(email, code) {
   await verifyCode(user.id, code)
   await clearVerificationCode(user.id)
   await activateUser(user.id)
+
+  return user;
 }
