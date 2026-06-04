@@ -5,7 +5,7 @@ import { signToken } from "./middleware/tokenService.js";
 
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
 import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
-import { getUserByEmail, getUserById } from "./db/users.js";
+import { getUserByEmail, getUserById, updateUser } from "./db/users.js";
 import { sendMessage, getMessages, getAllChatUsers } from "./db/messages.js";
 
 const app = express();
@@ -283,6 +283,23 @@ app.post("/message/send", requireAuth, async (req, res) => {
 
   } catch (err) {
       return res.status(500).json({error: err.message});
+  }
+});
+
+app.post("/user/update", async (req, res) => {
+  const { userId, updates } = req.body;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+
+    const updatedUser = await updateUser(userId, updates);
+
+    return res.json(updatedUser);
+
+  } catch (err) {
+      return res.status(500).json({error: err.message,});
   }
 });
 
