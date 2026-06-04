@@ -286,20 +286,44 @@ app.post("/message/send", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/user/update", async (req, res) => {
-  const { userId, updates } = req.body;
+app.post("/user/update-name-or-username", async (req, res) => {
+  const { userId, name, username } = req.body;
 
   try {
     if (!userId) {
       return res.status(400).json({error: "userId is required",});
     }
 
-    const updatedUser = await updateUser(userId, updates);
+    const updatedUser = await updateUser(userId, { name, username });
 
     return res.json(updatedUser);
 
   } catch (err) {
-      return res.status(500).json({error: err.message,});
+
+      if (err.code === "23505") {
+        return res.status(409).json({error: "username already exists",});
+      }
+
+      return res.status(500).json({error: err.message});
+  }
+});
+
+app.post("/user/update-password", async (req, res) => {
+  const { userId, newPassword } = req.body;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({error: "userId is required",});
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await updateUser(userId, { password_hash: passwordHash });
+
+    res.json({success: true});
+
+  } catch (err) {
+      return res.status(500).json({error: err.message});
   }
 });
 
