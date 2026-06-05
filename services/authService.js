@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt"
-import { activateUser, createUser, getUserByEmail, updateUser } from "../db/users.js";
+import { activateUser, createUser, getUserByEmail, updateUser, getUserById } from "../db/users.js";
 import { setVerificationCode, verifyCode, clearVerificationCode } from "../db/authMetadata.js";
 import { sendResetEmail, sendVerificationEmail } from "./emailService.js";
 
@@ -105,4 +105,24 @@ export async function verifyCodeAndActivate(email, code) {
   await activateUser(user.id)
 
   return user;
+}
+
+export async function updatePassword(userId, oldPassword, newPassword) {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new Error("Invalid credentials");
+  }
+  
+  const valid = await bcrypt.compare(oldPassword, user.password_hash);
+  
+  if (!valid) {
+    throw new Error("Invalid credentials");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  await updateUser(userId, { password_hash: passwordHash });
+
+  return newPassword;
 }

@@ -4,7 +4,7 @@ import { requireAuth } from "./middleware/requireAuth.js";
 import { signToken } from "./middleware/tokenService.js";
 
 import { getAllUserProfiles, getProfile, updateProfile } from "./db/user_profiles.js";
-import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate } from "./services/authService.js";
+import { createAndSendCode, createAndSendResetCode, login, signup, verifyCodeAndActivate, updatePassword } from "./services/authService.js";
 import { getUserByEmail, getUserById, updateUser } from "./db/users.js";
 import { sendMessage, getMessages, getAllChatUsers } from "./db/messages.js";
 
@@ -286,16 +286,16 @@ app.post("/message/send", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/user/update-user-info", async (req, res) => {
+app.post("/user/update-user-info", requireAuth, async (req, res) => {
   const { name, username } = req.body;
-  const userId = req.userId
+  const userId = req.userId;
 
   try {
     if (!userId) {
       return res.status(400).json({error: "userId is required",});
     }
 
-    const updatedUser = await updateUser(userId, { name, username });
+    const updatedUser = await updateUser(userId, { name: name, username: username });
 
     return res.json(updatedUser);
 
@@ -309,9 +309,9 @@ app.post("/user/update-user-info", async (req, res) => {
   }
 });
 
-app.post("/user/update-password", async (req, res) => {
+app.post("/user/update-password", requireAuth, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.userId
+  const userId = req.userId;
 
   try {
     if (!userId) {
@@ -321,21 +321,7 @@ app.post("/user/update-password", async (req, res) => {
       return res.status(400).json({error: "oldPassword is required",});
     }
 
-    const user = await getUserById(userId);
-  
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
-    
-    const valid = await bcrypt.compare(oldPassword, user.password_hash);
-    
-    if (!valid) {
-      throw new Error("Invalid credentials");
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-
-    await updateUser(userId, { password_hash: passwordHash });
+    await updatePassword(userId, oldPassword, newPassword)
 
     res.json({success: true});
 
